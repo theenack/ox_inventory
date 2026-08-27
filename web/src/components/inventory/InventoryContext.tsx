@@ -1,7 +1,10 @@
 import { onUse } from '../../dnd/onUse';
+import { onGive } from '../../dnd/onGive';
+import { onDrop } from '../../dnd/onDrop';
 import { Items } from '../../store/items';
 import { fetchNui } from '../../utils/fetchNui';
 import { Locale } from '../../store/locale';
+import { isSlotWithItem } from '../../helpers';
 import { setClipboard } from '../../utils/setClipboard';
 import { useAppSelector } from '../../store';
 import React from 'react';
@@ -34,15 +37,7 @@ interface GroupedButtons extends Array<Group> {}
 
 const InventoryContext: React.FC = () => {
   const contextMenu = useAppSelector((state) => state.contextMenu);
-  const itemAmount = useAppSelector((state) => state.inventory.itemAmount);
   const item = contextMenu.item;
-
-  const physicalAction = (action: 'drop' | 'throw' | 'give') => {
-    if (!item) return;
-
-    const count = itemAmount === 0 || itemAmount > item.count ? item.count : itemAmount;
-    fetchNui('nerpThrowItem', { action, slot: item.slot, count });
-  };
 
   const handleClick = (data: DataProps) => {
     if (!item) return;
@@ -52,13 +47,10 @@ const InventoryContext: React.FC = () => {
         onUse({ name: item.name, slot: item.slot });
         break;
       case 'give':
-        physicalAction('give');
+        onGive({ name: item.name, slot: item.slot });
         break;
       case 'drop':
-        physicalAction('drop');
-        break;
-      case 'throw':
-        physicalAction('throw');
+        isSlotWithItem(item) && onDrop({ item: item, inventory: 'player' });
         break;
       case 'remove':
         fetchNui('removeComponent', { component: data?.component, slot: data?.slot });
@@ -103,7 +95,6 @@ const InventoryContext: React.FC = () => {
         <MenuItem onClick={() => handleClick({ action: 'use' })} label={Locale.ui_use || 'Use'} />
         <MenuItem onClick={() => handleClick({ action: 'give' })} label={Locale.ui_give || 'Give'} />
         <MenuItem onClick={() => handleClick({ action: 'drop' })} label={Locale.ui_drop || 'Drop'} />
-        <MenuItem onClick={() => handleClick({ action: 'throw' })} label="Throw" />
         {item && item.metadata?.ammo > 0 && (
           <MenuItem onClick={() => handleClick({ action: 'removeAmmo' })} label={Locale.ui_remove_ammo} />
         )}
