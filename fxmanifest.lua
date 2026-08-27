@@ -28,7 +28,10 @@ server_scripts {
     'init.lua'
 }
 
-client_script 'init.lua'
+client_scripts {
+    'init.lua',
+    'modules/nerp_throwitem/client.lua'
+}
 
 ui_page 'web/build/index.html'
 
