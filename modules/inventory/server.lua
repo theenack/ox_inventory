@@ -162,7 +162,11 @@ local function loadInventoryData(data, player, ignoreSecurityChecks)
 			end
 
 			local model, class = lib.callback.await('ox_inventory:getVehicleData', source, data.netid)
-			local storage = Vehicles[data.type].models[model] or Vehicles[data.type][class]
+			local storageConfig = Vehicles[data.type]
+			local storage = storageConfig and (storageConfig.models[model] or storageConfig[class])
+			-- Some vehicle classes (aircraft/boats/custom classes) have no trunk
+			-- definition. Do not dereference nil or create an invalid inventory.
+			if not storage then return false end
             local dbId
 
             if server.getOwnedVehicleId then
@@ -202,7 +206,7 @@ local function loadInventoryData(data, player, ignoreSecurityChecks)
 		end
 	end
 
-	if data.netid then
+	if data.netid and inventory then
         inventory.entityId = data.entityId or NetworkGetEntityFromNetworkId(data.netid)
 		inventory.netid = data.netid
 	end
@@ -242,6 +246,12 @@ end
 
 exports('Inventory', getInventory)
 exports('GetInventory', getInventory)
+
+-- Return an already loaded inventory without triggering lazy vehicle storage
+-- creation. Used when despawning vehicles so unsupported classes remain safe.
+exports('GetLoadedInventory', function(id)
+    return Inventories[id]
+end)
 
 ---@param inv inventory
 ---@param owner? string | number
